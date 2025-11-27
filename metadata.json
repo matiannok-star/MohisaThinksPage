@@ -1,0 +1,7 @@
+{
+  "name": "Mohisa Thinks - Intelligent Automation",
+  "description": "A high-performance landing page for an AI automation agency, featuring interactive 3D elements, scroll animations, and a live voice agent integration.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
