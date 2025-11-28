@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Star } from "lucide-react";
 import { useScrollAnimation } from "../../hooks/use-scroll-animation";
+import { supabase } from "../../lib/supabase";
 
-const testimonials = [
+const initialTestimonials = [
   {
     name: "Sarah Mitchell",
     role: "Operations Director, TechFlow Inc",
@@ -25,9 +26,32 @@ const testimonials = [
 ];
 
 const TestimonialsSection = () => {
+  const [testimonials, setTestimonials] = useState(initialTestimonials);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('name, role, content, rating')
+          .eq('approved', true)
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        if (data && data.length > 0) {
+          // Add fetched reviews to the start of the list
+          setTestimonials([...data, ...initialTestimonials]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch reviews:", err);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -37,11 +61,14 @@ const TestimonialsSection = () => {
   };
 
   useEffect(() => {
-    startTimer();
+    // Only start timer once we have testimonials (though we always have initial ones)
+    if (testimonials.length > 0) {
+      startTimer();
+    }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [testimonials.length]);
 
   const handleManualChange = (index: number) => {
     setCurrentIndex(index);
@@ -81,7 +108,7 @@ const TestimonialsSection = () => {
                 <CardContent className="p-8 md:p-12 text-center space-y-6">
                   {/* Rating */}
                   <div className="flex justify-center gap-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
+                    {[...Array(testimonial.rating || 5)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-accent text-accent" />
                     ))}
                   </div>
@@ -94,7 +121,9 @@ const TestimonialsSection = () => {
                   {/* Author */}
                   <div className="pt-4">
                     <div className="font-semibold text-foreground">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    {testimonial.role && (
+                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -102,7 +131,7 @@ const TestimonialsSection = () => {
           </div>
 
           {/* Carousel indicators */}
-          <div className="flex justify-center gap-2 pt-4">
+          <div className="flex justify-center gap-2 pt-4 flex-wrap">
             {testimonials.map((_, index) => (
               <button
                 key={index}

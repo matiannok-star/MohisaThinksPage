@@ -1,9 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Loader2 } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { useToast } from "../../hooks/use-toast";
 
 const ContactFooter = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      subject: formData.get('subject'),
+      message: formData.get('message'),
+    };
+
+    try {
+      const { error } = await supabase.from('messages').insert([data]);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Message Sent!",
+        description: "Thanks for reaching out. We'll get back to you within 24 hours.",
+      });
+      
+      (e.target as HTMLFormElement).reset();
+    } catch (err) {
+      console.error('Error sending message:', err);
+      toast({
+        title: "Error Sending Message",
+        description: "Please try again later or email us directly.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-24 relative bg-background border-t border-white/5">
       <div className="container mx-auto px-4">
@@ -69,39 +111,47 @@ const ContactFooter = () => {
              </div>
           </div>
 
-          <form className="glass-card p-8 rounded-2xl space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="glass-card p-8 rounded-2xl space-y-6" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <label className="text-sm font-medium">First Name *</label>
-                    <input type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
+                    <input name="first_name" required type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting} />
                 </div>
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Last Name *</label>
-                    <input type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
+                    <input name="last_name" required type="text" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting} />
                 </div>
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Email *</label>
-                <input type="email" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
+                <input name="email" required type="email" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting} />
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Phone Number (Optional)</label>
-                <input type="tel" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
+                <input name="phone" type="tel" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting} />
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Subject *</label>
-                <select className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
-                    <option>General Inquiry</option>
-                    <option>Project Proposal</option>
-                    <option>Consultation</option>
+                <select name="subject" className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting}>
+                    <option value="General Inquiry">General Inquiry</option>
+                    <option value="Project Proposal">Project Proposal</option>
+                    <option value="Consultation">Consultation</option>
                 </select>
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Your Message *</label>
-                <textarea rows={5} className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"></textarea>
+                <textarea name="message" required rows={5} className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" disabled={isSubmitting}></textarea>
             </div>
-            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold">
-                Send Message <Send className="w-4 h-4 ml-2" />
+            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-semibold" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Message <Send className="w-4 h-4 ml-2" />
+                  </>
+                )}
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-4">By submitting this form, you agree to our privacy policy.</p>
           </form>

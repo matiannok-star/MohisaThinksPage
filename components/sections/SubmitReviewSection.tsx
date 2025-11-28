@@ -1,24 +1,66 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
 import { useScrollAnimation } from "../../hooks/use-scroll-animation";
 import { useToast } from "../../hooks/use-toast";
+import { supabase } from "../../lib/supabase";
 
 const SubmitReviewSection = () => {
   const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Review Submitted!",
-      description: "Thank you for sharing your experience. Your review is under moderation.",
-    });
-    setRating(0);
-    (e.target as HTMLFormElement).reset();
+    
+    if (rating === 0) {
+      toast({
+        title: "Rating required",
+        description: "Please select a star rating before submitting.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const formData = new FormData(e.target as HTMLFormElement);
+    const name = formData.get('name');
+    const role = formData.get('role');
+    const content = formData.get('content');
+
+    try {
+      const { error } = await supabase.from('reviews').insert([
+        {
+          name,
+          role,
+          content,
+          rating,
+          approved: false // Default to false, moderation required
+        }
+      ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Review Submitted!",
+        description: "Thank you for sharing your experience. Your review is pending moderation.",
+      });
+      
+      setRating(0);
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your review. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -48,6 +90,7 @@ const SubmitReviewSection = () => {
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
                       className="focus:outline-none transition-transform hover:scale-110"
+                      disabled={isSubmitting}
                     >
                       <Star 
                         className={`w-8 h-8 ${
@@ -64,11 +107,22 @@ const SubmitReviewSection = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Name</label>
-                  <Input required placeholder="John Doe" className="bg-background/50" />
+                  <Input 
+                    required 
+                    name="name"
+                    placeholder="John Doe" 
+                    className="bg-background/50" 
+                    disabled={isSubmitting}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Company (Optional)</label>
-                  <Input placeholder="Tech Inc." className="bg-background/50" />
+                  <Input 
+                    name="role"
+                    placeholder="Tech Inc." 
+                    className="bg-background/50" 
+                    disabled={isSubmitting}
+                  />
                 </div>
               </div>
 
@@ -76,14 +130,22 @@ const SubmitReviewSection = () => {
                 <label className="text-sm font-medium">Review</label>
                 <textarea 
                   required
+                  name="content"
                   rows={4} 
                   className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Tell us about your project..."
+                  disabled={isSubmitting}
                 />
               </div>
 
-              <Button type="submit" className="w-full text-lg font-semibold h-12">
-                Submit Review
+              <Button type="submit" className="w-full text-lg font-semibold h-12" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  "Submit Review"
+                )}
               </Button>
             </form>
           </div>
