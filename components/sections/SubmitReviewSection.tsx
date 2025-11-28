@@ -29,16 +29,17 @@ const SubmitReviewSection = () => {
     const formData = new FormData(e.target as HTMLFormElement);
     const name = formData.get('name');
     const role = formData.get('role');
-    const content = formData.get('content');
+    const message = formData.get('message');
 
     try {
       const { error } = await supabase.from('reviews').insert([
         {
           name,
           role,
-          content,
+          message,
           rating,
-          approved: false // Default to false, moderation required
+          // status defaults to 'pending'
+          // approved defaults to false
         }
       ]);
 
@@ -130,7 +131,7 @@ const SubmitReviewSection = () => {
                 <label className="text-sm font-medium">Review</label>
                 <textarea 
                   required
-                  name="content"
+                  name="message"
                   rows={4} 
                   className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Tell us about your project..."

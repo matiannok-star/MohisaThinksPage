@@ -36,14 +36,21 @@ const TestimonialsSection = () => {
       try {
         const { data, error } = await supabase
           .from('reviews')
-          .select('name, role, content, rating')
+          .select('name, role, message, rating')
           .eq('approved', true)
           .order('created_at', { ascending: false })
           .limit(10);
           
         if (data && data.length > 0) {
+          // Map database 'message' field to 'content' for display
+          const formattedReviews = data.map(review => ({
+            name: review.name,
+            role: review.role,
+            content: review.message,
+            rating: review.rating
+          }));
           // Add fetched reviews to the start of the list
-          setTestimonials([...data, ...initialTestimonials]);
+          setTestimonials([...formattedReviews, ...initialTestimonials]);
         }
       } catch (err) {
         console.error("Failed to fetch reviews:", err);
