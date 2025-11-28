@@ -7,7 +7,7 @@ import { useToast } from "../../hooks/use-toast";
 import { useTypingAnimation } from "../../hooks/use-typing-animation";
 import { useVoiceAgent } from "../voice/voice-agent";
 
-// Mode-specific response generators
+// === Response generators (same as before) ===
 const generateChatResponse = (userInput: string, conversationHistory: string[]) => {
   const responses = [
     `I understand you're interested in "${userInput}". Let me help you explore automation solutions for that!`,
@@ -44,16 +44,13 @@ const generateAnalysisResponse = (userInput: string, conversationHistory: string
   return responses[Math.floor(Math.random() * responses.length)];
 };
 
-// Message component with typing animation
+// === Message Bubble ===
 interface MessageBubbleProps {
   message: { role: "user" | "assistant"; text: string };
   isLatest: boolean;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ 
-  message, 
-  isLatest 
-}) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isLatest }) => {
   const { displayedText } = useTypingAnimation(
     message.text,
     20,
@@ -61,22 +58,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   );
   
   return (
-    <div
-      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
-    >
-      <div
-        className={`max-w-[80%] p-4 rounded-lg ${
-          message.role === "user"
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground border border-border"
-        }`}
-      >
+    <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}>
+      <div className={`max-w-[80%] p-4 rounded-lg ${
+        message.role === "user"
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-foreground border border-border"
+      }`}>
         <p className="text-sm leading-relaxed whitespace-pre-line">{displayedText}</p>
       </div>
     </div>
   );
 };
 
+// === Interactive Section with Voice Assistant ===
 const InteractiveSection = () => {
   const { toast } = useToast();
   const { toggleSession, isActive } = useVoiceAgent();
@@ -87,49 +81,32 @@ const InteractiveSection = () => {
   const [conversationContext, setConversationContext] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Auto-scroll
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
-
-    // Add user message
-    const userMessage = { role: "user" as const, text: inputValue };
+    const userMessage = { role: "user", text: inputValue };
     const userInput = inputValue;
-    setMessages((prev) => [...prev, userMessage]);
-    setConversationContext((prev) => [...prev, userInput]);
+    setMessages(prev => [...prev, userMessage]);
+    setConversationContext(prev => [...prev, userInput]);
     setInputValue("");
     setIsTyping(true);
 
-    // Generate mode-specific, context-aware response
     setTimeout(() => {
       let aiResponse = "";
-      
       switch (activeTab) {
-        case "chat":
-          aiResponse = generateChatResponse(userInput, conversationContext);
-          break;
-        case "workflow":
-          aiResponse = generateWorkflowResponse(userInput, conversationContext);
-          break;
-        case "analysis":
-          aiResponse = generateAnalysisResponse(userInput, conversationContext);
-          break;
+        case "chat": aiResponse = generateChatResponse(userInput, conversationContext); break;
+        case "workflow": aiResponse = generateWorkflowResponse(userInput, conversationContext); break;
+        case "analysis": aiResponse = generateAnalysisResponse(userInput, conversationContext); break;
       }
-
-      const aiMessage = { role: "assistant" as const, text: aiResponse };
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages(prev => [...prev, { role: "assistant", text: aiResponse }]);
       setIsTyping(false);
     }, 800 + Math.random() * 800);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
   };
 
   const handleTabClick = (tab: "chat" | "workflow" | "analysis") => {
@@ -139,123 +116,76 @@ const InteractiveSection = () => {
       workflow: "Technical workflow builder with step-by-step guides",
       analysis: "Data-driven insights and optimization metrics"
     };
-    
-    toast({
-      title: `${tab.charAt(0).toUpperCase() + tab.slice(1)} Mode`,
-      description: descriptions[tab],
-    });
+    toast({ title: `${tab.charAt(0).toUpperCase() + tab.slice(1)} Mode`, description: descriptions[tab] });
   };
 
   return (
     <section id="interactive" className="py-24 relative bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto space-y-12">
-          {/* Section header */}
+          {/* Header */}
           <div className="text-center space-y-4 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-primary/30 mb-4">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">AI IN ACTION</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold">
-              See <span className="text-primary">Automation</span> Live
-            </h2>
+            <h2 className="text-4xl md:text-5xl font-bold">See <span className="text-primary">Automation</span> Live</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Watch how AI-powered automation responds to real business challenges
             </p>
           </div>
 
-          {/* Interactive Chat Interface */}
-          <Card className="border-primary/30 bg-card/50 backdrop-blur-sm">
+          {/* Chat Card */}
+          <Card className="border-primary/30 bg-card/50 backdrop-blur-sm relative">
             <CardHeader>
               <CardTitle className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${isActive ? "bg-green-500 animate-pulse" : "bg-primary animate-pulse"}`} />
                   AI Automation Assistant
                 </div>
-                {/* Tab buttons */}
+                {/* Tabs + Voice Button */}
                 <div className="flex gap-2 flex-wrap justify-center">
-                  <Button
-                    variant={activeTab === "chat" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleTabClick("chat")}
-                    className="gap-2"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    Chat
-                  </Button>
-                  <Button
-                    variant={activeTab === "workflow" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleTabClick("workflow")}
-                    className="gap-2"
-                  >
-                    <Workflow className="w-4 h-4" />
-                    Workflow
-                  </Button>
-                  <Button
-                    variant={activeTab === "analysis" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleTabClick("analysis")}
-                    className="gap-2"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    Analysis
-                  </Button>
-                  {/* Global Voice Trigger */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleSession}
-                    className={`gap-2 border-primary/50 text-primary hover:bg-primary/10 ${isActive ? "bg-primary/10 border-primary text-red-400 hover:text-red-500 hover:border-red-500" : ""}`}
-                  >
+                  <Button variant={activeTab === "chat" ? "default" : "outline"} size="sm" onClick={() => handleTabClick("chat")} className="gap-2"><MessageSquare className="w-4 h-4"/> Chat</Button>
+                  <Button variant={activeTab === "workflow" ? "default" : "outline"} size="sm" onClick={() => handleTabClick("workflow")} className="gap-2"><Workflow className="w-4 h-4"/> Workflow</Button>
+                  <Button variant={activeTab === "analysis" ? "default" : "outline"} size="sm" onClick={() => handleTabClick("analysis")} className="gap-2"><BarChart3 className="w-4 h-4"/> Analysis</Button>
+                  <Button variant="outline" size="sm" onClick={toggleSession} className={`gap-2 border-primary/50 text-primary hover:bg-primary/10 ${isActive ? "bg-primary/10 border-primary text-red-400 hover:text-red-500 hover:border-red-500" : ""}`}>
                     {isActive ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                     {isActive ? "End Session" : "Voice Mode"}
                   </Button>
                 </div>
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-6">
-              {/* Messages display area */}
+              {/* Messages */}
               <div className="min-h-[400px] max-h-[500px] overflow-y-auto space-y-4 p-4 bg-background/50 rounded-lg">
                 {messages.length === 0 ? (
                   <div className="text-center py-16 space-y-4">
-                    <div className="text-6xl mb-4">
-                      {activeTab === "chat" && "💬"}
-                      {activeTab === "workflow" && "⚙️"}
-                      {activeTab === "analysis" && "📊"}
-                    </div>
+                    <div className="text-6xl mb-4">{activeTab === "chat" ? "💬" : activeTab === "workflow" ? "⚙️" : "📊"}</div>
                     <h3 className="text-xl font-semibold">
-                      {activeTab === "chat" && "Start a Conversation"}
-                      {activeTab === "workflow" && "Build Your Workflow"}
-                      {activeTab === "analysis" && "Analyze Your Process"}
+                      {activeTab === "chat" ? "Start a Conversation" : activeTab === "workflow" ? "Build Your Workflow" : "Analyze Your Process"}
                     </h3>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      {activeTab === "chat" && "Ask me about automating your business processes, integrating tools, or building custom workflows!"}
-                      {activeTab === "workflow" && "Describe your automation needs and I'll design a step-by-step workflow with technical specifications."}
-                      {activeTab === "analysis" && "Share your process details and I'll provide data-driven insights, efficiency metrics, and ROI projections."}
+                      {activeTab === "chat" ? "Ask me about automating your business processes, integrating tools, or building custom workflows!" :
+                       activeTab === "workflow" ? "Describe your automation needs and I'll design a step-by-step workflow with technical specifications." :
+                       "Share your process details and I'll provide data-driven insights, efficiency metrics, and ROI projections."}
                     </p>
                     <div className="pt-4">
-                       <Button variant="link" onClick={toggleSession} className="text-primary">
-                         {isActive ? "Tap here to stop voice chat" : "Or try speaking to Mohisa AI directly \u2192"}
-                       </Button>
+                      <Button variant="link" onClick={toggleSession} className="text-primary">
+                        {isActive ? "Tap here to stop voice chat" : "Or try speaking to Mohisa AI directly →"}
+                      </Button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {messages.map((message, index) => (
-                      <MessageBubble 
-                        key={index} 
-                        message={message} 
-                        isLatest={index === messages.length - 1}
-                      />
-                    ))}
+                    {messages.map((m, i) => <MessageBubble key={i} message={m} isLatest={i === messages.length -1} />)}
                     {isTyping && (
                       <div className="flex justify-start animate-fade-in">
                         <div className="bg-muted text-foreground border border-border p-4 rounded-lg">
                           <div className="flex gap-1">
-                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{animationDelay:"0ms"}} />
+                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{animationDelay:"150ms"}} />
+                            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{animationDelay:"300ms"}} />
                           </div>
                         </div>
                       </div>
@@ -265,31 +195,13 @@ const InteractiveSection = () => {
                 )}
               </div>
 
-              {/* Input area */}
+              {/* Input */}
               <div className="flex gap-2">
-                <Input
-                  placeholder={
-                    activeTab === "chat" 
-                      ? "Ask AI to automate anything..." 
-                      : activeTab === "workflow"
-                      ? "Describe your automation workflow..."
-                      : "What process should I analyze?"
-                  }
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isTyping}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isTyping}
-                  size="icon"
-                  className="shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+                <Input placeholder={activeTab === "chat" ? "Ask AI to automate anything..." : activeTab === "workflow" ? "Describe your automation workflow..." : "What process should I analyze?"}
+                       value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={handleKeyPress} disabled={isTyping} className="flex-1"/>
+                <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping} size="icon" className="shrink-0"><Send className="w-4 h-4"/></Button>
               </div>
+
               {conversationContext.length > 0 && (
                 <div className="text-xs text-muted-foreground">
                   💭 Remembering context from {conversationContext.length} previous {conversationContext.length === 1 ? 'message' : 'messages'}
@@ -298,16 +210,16 @@ const InteractiveSection = () => {
             </CardContent>
           </Card>
 
-          {/* Feature highlights */}
+          {/* Feature Highlights */}
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { title: "Real-time Processing", desc: "Instant responses and automation triggers" },
               { title: "Multi-tool Integration", desc: "Connect 100+ apps and services" },
               { title: "Smart Decision Making", desc: "AI-powered logic and workflows" },
-            ].map((feature, index) => (
-              <Card key={index} className="text-center p-6 bg-card/30 border-border hover:border-primary/50 transition-all">
-                <CardTitle className="text-lg mb-2">{feature.title}</CardTitle>
-                <p className="text-sm text-muted-foreground">{feature.desc}</p>
+            ].map((f, i) => (
+              <Card key={i} className="text-center p-6 bg-card/30 border-border hover:border-primary/50 transition-all">
+                <CardTitle className="text-lg mb-2">{f.title}</CardTitle>
+                <p className="text-sm text-muted-foreground">{f.desc}</p>
               </Card>
             ))}
           </div>
