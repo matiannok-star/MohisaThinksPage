@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Workflow, Database, Brain, BarChart3, Rocket } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "../ui/carousel";
 import { useScrollAnimation } from "../../hooks/use-scroll-animation";
 
 const services = [
@@ -39,6 +39,19 @@ const services = [
 
 const ServicesSection = () => {
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const [api, setApi] = useState<CarouselApi>();
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      api.scrollNext();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [api]);
 
   return (
     <section id="services" className="py-24 relative bg-muted/30">
@@ -62,6 +75,7 @@ const ServicesSection = () => {
           {/* Services Carousel */}
           <div className="px-12">
             <Carousel
+              setApi={setApi}
               opts={{
                 align: "start",
                 loop: true,
