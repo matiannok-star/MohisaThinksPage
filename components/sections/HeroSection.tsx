@@ -5,17 +5,14 @@ import { Badge } from "../ui/badge";
 import { useTypingEffect } from "../../hooks/use-typing-effect";
 import { useParallax } from "../../hooks/use-parallax";
 import { useScrollAnimation } from "../../hooks/use-scroll-animation";
-import ConsultationCalendar from "./ConsultationCalendar";
 
 const HeroSection = () => {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
   const scrollToServices = () => {
     document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const openCalendar = () => {
-    setIsCalendarOpen(true);
+  const scrollToContact = () => {
+    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Smooth chained typing effects
@@ -75,7 +72,6 @@ const HeroSection = () => {
 
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 perspective-container">
-      <ConsultationCalendar open={isCalendarOpen} onOpenChange={setIsCalendarOpen} />
       
       {/* Vanta background is visible behind this section */}
       <div 
@@ -141,7 +137,7 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button 
                 size="lg" 
-                onClick={openCalendar}
+                onClick={scrollToContact}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105"
               >
                 Get Started - Free
