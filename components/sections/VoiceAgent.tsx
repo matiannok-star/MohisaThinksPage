@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "../ui/button";
-import { Mic, MicOff, Radio, Sparkles, Volume2 } from "lucide-react";
+import { Mic, MicOff, Radio, Sparkles, Volume2, Bot, BarChart3, Workflow } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 
@@ -340,9 +340,6 @@ const VoiceAgent = () => {
     </section>
   );
 };
-
-// Helper sub-component for floating cards
-import { Bot, BarChart3, Workflow } from "lucide-react";
 
 const CardFloat = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="glass-card p-4 rounded-xl border border-white/10 w-64 transform hover:scale-105 transition-transform duration-300">
